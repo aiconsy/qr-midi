@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSCC QR Code Generator</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="apple-touch-icon" href="icon.svg">
+    <!-- Use local QR code library -->
+    <script src="qrcode.min.js"></script>
+    <script>
+        window.addEventListener('error', function(e) {
+            if (e.target.tagName === 'SCRIPT' && e.target.src.includes('qrcode.min.js')) {
+                document.body.innerHTML = '<div style="color:red;font-size:1.5em;text-align:center;margin-top:2em;">QR Code library failed to load. Please contact IT support.</div>';
+            }
+        }, true);
+        // Register service worker for offline support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js')
+                    .then(function(registration) {
+                        console.log('Service Worker registered with scope:', registration.scope);
+                    }, function(error) {
+                        console.log('Service Worker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header with Language Toggle -->
+        <header class="header">
+            <h1 data-lang="title">SSCC QR Code Generator</h1>
+            <div class="language-toggle">
+                <button id="langBtn" class="lang-btn" onclick="toggleLanguage()" aria-label="Toggle language">🌍 DE</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- SSCC Input Section -->
+            <div class="input-section">
+                <label for="ssccInput" data-lang="sscc-label">SSCC Number:</label>
+                <div style="display: flex; gap: 5px;">
+                    <input 
+                        type="text" 
+                        id="ssccInput" 
+                        class="sscc-input" 
+                        placeholder="Scan SSCC number here..." 
+                        data-lang-placeholder="sscc-placeholder"
+                        autofocus
+                        aria-label="SSCC input field"
+                    >
+                    <button onclick="clearInput()" class="clear-btn" aria-label="Clear input">❌</button>
+                </div>
+                <div id="errorMessage" class="error-message" aria-live="polite"></div>
+                <div id="duplicateWarning" class="duplicate-warning" aria-live="polite"></div>
+            </div>
+
+            <!-- Copy Selection Buttons -->
+            <div class="copy-section">
+                <label data-lang="copies-label">Number of Copies:</label>
+                <div class="copy-buttons">
+                    <button class="copy-btn" onclick="printCopies(1)" data-lang="copy-1" aria-label="Print 1 copy">1</button>
+                    <button class="copy-btn" onclick="printCopies(5)" data-lang="copy-5" aria-label="Print 5 copies">5</button>
+                    <button class="copy-btn" onclick="printCopies(10)" data-lang="copy-10" aria-label="Print 10 copies">10</button>
+                    <button class="copy-btn" onclick="printCopies(20)" data-lang="copy-20" aria-label="Print 20 copies">20</button>
+                </div>
+                <div style="font-size:0.9em;color:#555;margin-top:4px;">Ensure printer is set to 50mm x 30mm labels in the print dialog.</div>
+            </div>
+
+            <!-- QR Preview Section -->
+            <div class="preview-section">
+                <div class="preview-label" data-lang="preview-label">Preview:</div>
+                <div class="sticker-preview" id="stickerPreview" aria-label="QR code preview area">
+                    <div class="preview-placeholder" data-lang="preview-placeholder">
+                        <span>📱 QR code will appear here</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Status Bar -->
+        <div class="status-bar">
+            <div class="status-item">
+                <span data-lang="print-status">Print Status:</span>
+                <span id="printStatus" class="status-ready">Ready</span>
+            </div>
+            <div class="status-item">
+                <span data-lang="connection-status">Connection:</span>
+                <span id="connectionStatus" class="status-connected">Connected</span>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <span data-lang="footer-text">Micro SAAS built by</span>
+                <a href="https://aiconsy.com" target="_blank" rel="noopener" class="footer-link">aiconsy.com</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" data-lang="printing">Printing...</div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

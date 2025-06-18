@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="192" height="192" viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+    <rect width="192" height="192" fill="white"/>
+    <g transform="translate(16,16) scale(0.5)">
+        <!-- QR Code Pattern -->
+        <rect x="0" y="0" width="320" height="320" fill="white"/>
+        <!-- Finder Pattern 1 -->
+        <rect x="40" y="40" width="80" height="80" fill="black"/>
+        <rect x="60" y="60" width="40" height="40" fill="white"/>
+        <rect x="70" y="70" width="20" height="20" fill="black"/>
+        <!-- Finder Pattern 2 -->
+        <rect x="200" y="40" width="80" height="80" fill="black"/>
+        <rect x="220" y="60" width="40" height="40" fill="white"/>
+        <rect x="230" y="70" width="20" height="20" fill="black"/>
+        <!-- Finder Pattern 3 -->
+        <rect x="40" y="200" width="80" height="80" fill="black"/>
+        <rect x="60" y="220" width="40" height="40" fill="white"/>
+        <rect x="70" y="230" width="20" height="20" fill="black"/>
+        <!-- Data Pattern -->
+        <rect x="160" y="160" width="40" height="40" fill="black"/>
+        <rect x="240" y="240" width="40" height="40" fill="black"/>
+    </g>
+</svg> 
