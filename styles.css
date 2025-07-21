@@ -107,6 +107,95 @@ body {
     transform: translateY(-1px);
 }
 
+/* Input container for flex layout */
+.input-container {
+    display: flex;
+    gap: 5px;
+}
+
+/* Instructions text styling */
+.instructions-text {
+    font-size: 0.9em;
+    color: #555;
+    margin-top: 4px;
+}
+
+/* Instructions Section */
+.instructions-section {
+    background: rgba(52, 152, 219, 0.05);
+    border: 1px solid rgba(52, 152, 219, 0.2);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 20px 0;
+    font-size: 14px;
+}
+
+.instructions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 15px;
+}
+
+.instructions-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.instructions-step {
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+.instructions-printer {
+    color: #7f8c8d;
+    font-style: italic;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.hotkeys-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.hotkey-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 5px;
+    border-left: 3px solid #3498db;
+}
+
+.hotkey-key {
+    background: #34495e;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-family: monospace;
+    font-size: 12px;
+    font-weight: bold;
+    min-width: 30px;
+    text-align: center;
+}
+
+.hotkey-description {
+    color: #2c3e50;
+    font-size: 13px;
+}
+
+.instructions-title {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
 .error-message {
     color: #e74c3c;
     font-size: 14px;
@@ -134,12 +223,70 @@ body {
     margin-bottom: 30px;
 }
 
-.copy-section label {
-    display: block;
+.copy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 15px;
+}
+
+.copy-section label {
     font-weight: 600;
     color: #2c3e50;
     font-size: 16px;
+    margin: 0;
+}
+
+.printer-settings-btn {
+    background: #34495e;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.printer-settings-btn:hover {
+    background: #2c3e50;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(52, 73, 94, 0.3);
+}
+
+.copy-total {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #3498db;
+}
+
+.copy-total-number {
+    font-weight: bold;
+    font-size: 18px;
+    color: #2c3e50;
+    min-width: 30px;
+}
+
+.clear-total-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 4px 12px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.3s ease;
+}
+
+.clear-total-btn:hover {
+    background: #c0392b;
+    transform: scale(1.05);
 }
 
 .copy-buttons {
@@ -185,6 +332,42 @@ body {
 
 .copy-btn:hover::before {
     left: 100%;
+}
+
+.print-actions {
+    margin-top: 15px;
+    text-align: center;
+}
+
+.print-btn {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    min-width: 200px;
+}
+
+.print-btn:hover:not(:disabled) {
+    background: #2ecc71;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+}
+
+.print-btn:disabled {
+    background: #bdc3c7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.print-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
 }
 
 /* Preview Section */
@@ -645,4 +828,23 @@ button:focus, input:focus, select:focus {
 
 .copy-btn:focus, .lang-btn:focus, .clear-btn:focus {
     background: #ddd;
+} 
+
+/* Responsive design for instructions */
+@media (max-width: 768px) {
+    .instructions-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .instructions-section {
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .hotkey-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
 } 

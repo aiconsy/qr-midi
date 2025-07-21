@@ -6,28 +6,48 @@
     <title>SSCC QR Code Generator</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ffffff">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="apple-touch-icon" href="icon.svg">
     <!-- Use local QR code library -->
     <script src="qrcode.min.js"></script>
     <script>
-        window.addEventListener('error', function(e) {
-            if (e.target.tagName === 'SCRIPT' && e.target.src.includes('qrcode.min.js')) {
-                document.body.innerHTML = '<div style="color:red;font-size:1.5em;text-align:center;margin-top:2em;">QR Code library failed to load. Please contact IT support.</div>';
+        // Check if QR code library loaded successfully
+        window.addEventListener('load', function() {
+            if (typeof QRCode === 'undefined') {
+                document.body.innerHTML = '<div style="color:red;font-size:1.5em;text-align:center;margin-top:2em;">QR Code library failed to load. Please refresh the page.</div>';
+            } else {
+                // Library loaded successfully, initialize app
+                initializeApp();
             }
-        }, true);
+        });
+        
         // Register service worker for offline support
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/service-worker.js')
+                navigator.serviceWorker.register('./service-worker.js')
                     .then(function(registration) {
-                        console.log('Service Worker registered with scope:', registration.scope);
+                        // Service Worker registered successfully
                     }, function(error) {
-                        console.log('Service Worker registration failed:', error);
+                        // Service Worker registration failed silently
                     });
             });
         }
+        
+        // Check if QRCode is available after script load
+        window.addEventListener('load', function() {
+            // Clear service worker cache if QRCode is not available
+            if (typeof QRCode === 'undefined' && 'serviceWorker' in navigator) {
+                caches.keys().then(function(cacheNames) {
+                    return Promise.all(
+                        cacheNames.map(function(cacheName) {
+                            return caches.delete(cacheName);
+                        })
+                    );
+                }).then(function() {
+                    window.location.reload();
+                });
+            }
+        });
     </script>
 </head>
 <body>
@@ -45,7 +65,7 @@
             <!-- SSCC Input Section -->
             <div class="input-section">
                 <label for="ssccInput" data-lang="sscc-label">SSCC Number:</label>
-                <div style="display: flex; gap: 5px;">
+                <div class="input-container">
                     <input 
                         type="text" 
                         id="ssccInput" 
@@ -63,14 +83,28 @@
 
             <!-- Copy Selection Buttons -->
             <div class="copy-section">
-                <label data-lang="copies-label">Number of Copies:</label>
-                <div class="copy-buttons">
-                    <button class="copy-btn" onclick="printCopies(1)" data-lang="copy-1" aria-label="Print 1 copy">1</button>
-                    <button class="copy-btn" onclick="printCopies(5)" data-lang="copy-5" aria-label="Print 5 copies">5</button>
-                    <button class="copy-btn" onclick="printCopies(10)" data-lang="copy-10" aria-label="Print 10 copies">10</button>
-                    <button class="copy-btn" onclick="printCopies(20)" data-lang="copy-20" aria-label="Print 20 copies">20</button>
+                <div class="copy-header">
+                    <label data-lang="copies-label">Number of Copies:</label>
+                    <button class="printer-settings-btn" onclick="openPrinterSettings()" aria-label="Advanced printer settings" title="Advanced Printer Settings">
+                        ⚙️ <span data-lang="settings">Settings</span>
+                    </button>
                 </div>
-                <div style="font-size:0.9em;color:#555;margin-top:4px;">Ensure printer is set to 50mm x 30mm labels in the print dialog.</div>
+                <div class="copy-total">
+                    <span data-lang="total-label">Total: </span>
+                    <span id="copyTotal" class="copy-total-number">0</span>
+                    <button class="clear-total-btn" onclick="clearCopyTotal()" aria-label="Clear total"><span data-lang="clear">Clear</span></button>
+                </div>
+                <div class="copy-buttons">
+                    <button class="copy-btn" onclick="addToCopies(1)" data-lang="add-1" aria-label="Add 1 copy">+1</button>
+                    <button class="copy-btn" onclick="addToCopies(5)" data-lang="add-5" aria-label="Add 5 copies">+5</button>
+                    <button class="copy-btn" onclick="addToCopies(10)" data-lang="add-10" aria-label="Add 10 copies">+10</button>
+                    <button class="copy-btn" onclick="addToCopies(20)" data-lang="add-20" aria-label="Add 20 copies">+20</button>
+                </div>
+                <div class="print-actions">
+                    <button class="print-btn" onclick="printAccumulatedCopies()" disabled id="printBtn" aria-label="Print all copies">
+                        🖨️ <span data-lang="print-all-copies">Print</span> <span id="printBtnCount">0</span> <span data-lang="copies-label">Copies</span>
+                    </button>
+                </div>
             </div>
 
             <!-- QR Preview Section -->
@@ -79,6 +113,54 @@
                 <div class="sticker-preview" id="stickerPreview" aria-label="QR code preview area">
                     <div class="preview-placeholder" data-lang="preview-placeholder">
                         <span>📱 QR code will appear here</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Instructions Section -->
+            <div class="instructions-section">
+                <div class="instructions-title" data-lang="instructions-title">Instructions:</div>
+                <div class="instructions-grid">
+                    <div class="instructions-steps">
+                        <div class="instructions-step" data-lang="instructions-step1">1. Scan or type SSCC number</div>
+                        <div class="instructions-step" data-lang="instructions-step2">2. Click numbers to add copies</div>
+                        <div class="instructions-step" data-lang="instructions-step3">3. Press print when ready</div>
+                        <div class="instructions-printer" data-lang="instructions-printer">Optimized for Zebra ZD411 thermal printer</div>
+                    </div>
+                    <div class="hotkeys-list">
+                        <div class="instructions-title" data-lang="hotkeys-title">Keyboard Shortcuts:</div>
+                        <div class="hotkey-item">
+                            <span class="hotkey-key">ESC</span>
+                            <span class="hotkey-description" data-lang="hotkey-esc">Clear all fields</span>
+                        </div>
+                        <div class="hotkey-item">
+                            <span class="hotkey-key">ENTER</span>
+                            <span class="hotkey-description" data-lang="hotkey-enter">Add 1 copy & print if ready</span>
+                        </div>
+                        <div class="hotkey-item">
+                            <span class="hotkey-key">SPACE</span>
+                            <span class="hotkey-description" data-lang="hotkey-space">Add last print quantity</span>
+                        </div>
+                        <div class="hotkey-item">
+                            <span class="hotkey-key">F1</span>
+                            <span class="hotkey-description" data-lang="hotkey-f1">Add 1 copy</span>
+                        </div>
+                        <div class="hotkey-item">
+                            <span class="hotkey-key">F2</span>
+                            <span class="hotkey-description" data-lang="hotkey-f2">Add 5 copies</span>
+                        </div>
+                        <div class="hotkey-item">
+                            <span class="hotkey-key">F3</span>
+                            <span class="hotkey-description" data-lang="hotkey-f3">Add 10 copies</span>
+                        </div>
+                        <div class="hotkey-item">
+                            <span class="hotkey-key">F4</span>
+                            <span class="hotkey-description" data-lang="hotkey-f4">Add 20 copies</span>
+                        </div>
+                        <div class="hotkey-item">
+                            <span class="hotkey-key">F5</span>
+                            <span class="hotkey-description" data-lang="hotkey-f5">Print accumulated copies</span>
+                        </div>
                     </div>
                 </div>
             </div>
