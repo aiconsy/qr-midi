@@ -1,4 +1,4 @@
-const CACHE_NAME = 'qr-generator-v3';
+const CACHE_NAME = 'qr-generator-v4';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -10,78 +10,66 @@ const ASSETS_TO_CACHE = [
   './manifest.json'
 ];
 
-// List of external resources that should be allowed to pass through
-const EXTERNAL_RESOURCES = [
-  'https://www.google-analytics.com/analytics.js',
-  'https://www.googletagmanager.com/gtag/js'
-];
-
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        return cache.addAll(ASSETS_TO_CACHE);
-      })
-      .catch(error => {
-        // Cache installation failed silently
-      })
-  );
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(ASSETS_TO_CACHE);
+    await self.skipWaiting();
+  })());
 });
 
-// Clear old caches
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
+  event.waitUntil((async () => {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map((name) => {
+      if (name !== CACHE_NAME) return caches.delete(name);
+      return undefined;
+    }));
+    await self.clients.claim();
+  })());
 });
 
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests and external resources
-  if (!event.request.url.startsWith(self.location.origin) || 
-      EXTERNAL_RESOURCES.some(url => event.request.url.startsWith(url))) {
+  const req = event.request;
+
+  // Only handle same-origin GET requests.
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Navigation requests: prefer network, fall back to cached app shell.
+  if (req.mode === 'navigate') {
+    event.respondWith((async () => {
+      try {
+        const networkResp = await fetch(req);
+        if (networkResp && networkResp.status === 200 && networkResp.type === 'basic') {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put('./index.html', networkResp.clone());
+        }
+        return networkResp;
+      } catch (_) {
+        const cached = await caches.match('./index.html');
+        return cached || new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
+      }
+    })());
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        if (response) {
-          return response;
-        }
-        return fetch(event.request)
-          .then(response => {
-            // Don't cache if not a success response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            const responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-            return response;
-          })
-          .catch(error => {
-            // Return a fallback response for failed requests
-            if (event.request.url.endsWith('.png') || event.request.url.endsWith('.ico')) {
-              return new Response('', { status: 404 });
-            }
-            return new Response('Offline - Please check your connection', { 
-              status: 503,
-              statusText: 'Service Unavailable',
-              headers: new Headers({
-                'Content-Type': 'text/plain'
-              })
-            });
-          });
-      })
-  );
-}); 
+  // Static assets: cache-first, update cache on successful network fetch.
+  event.respondWith((async () => {
+    const cached = await caches.match(req);
+    if (cached) return cached;
+
+    try {
+      const networkResp = await fetch(req);
+      if (networkResp && networkResp.status === 200 && networkResp.type === 'basic') {
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(req, networkResp.clone());
+      }
+      return networkResp;
+    } catch (_) {
+      // Minimal fallback: if we can't fetch and don't have cache, return 404-ish response.
+      return new Response('', { status: 404 });
+    }
+  })());
+});

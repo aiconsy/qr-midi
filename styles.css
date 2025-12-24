@@ -827,8 +827,15 @@ button:focus, input:focus, select:focus {
 }
 
 .copy-btn:focus, .lang-btn:focus, .clear-btn:focus {
-    background: #ddd;
-} 
+    /* Keep original backgrounds; add extra focus emphasis */
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.25);
+}
+
+.printer-settings-btn:focus,
+.print-btn:focus,
+.clear-total-btn:focus {
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.25);
+}
 
 /* Responsive design for instructions */
 @media (max-width: 768px) {

@@ -37,7 +37,6 @@ const translations = {
     'duplicate-warning': '⚠️ This SSCC was already printed today',
     'empty-sscc-error': 'Please enter an SSCC number',
     'invalid-sscc-error': 'Invalid SSCC format',
-    'print-success': 'Print job sent successfully',
     'print-error': 'Print failed - please try again',
     'too-long-error': 'Warning: SSCC length exceeds {max} characters',
     'long-sscc-warning': 'Warning: Very long codes may not scan reliably. Consider using a shorter SSCC if possible.',
@@ -104,7 +103,6 @@ const translations = {
     'duplicate-warning': '⚠️ Diese SSCC wurde heute bereits gedruckt',
     'empty-sscc-error': 'Bitte eine SSCC Nummer eingeben',
     'invalid-sscc-error': 'Ungültiges SSCC Format',
-    'print-success': 'Druckauftrag erfolgreich gesendet',
     'print-error': 'Druck fehlgeschlagen - bitte erneut versuchen',
     'too-long-error': 'Warnung: SSCC-Länge überschreitet {max} Zeichen',
     'long-sscc-warning': 'Warnung: Sehr lange Codes können nicht zuverlässig gescannt werden. Verwenden Sie nach Möglichkeit einen kürzeren SSCC.',
@@ -160,6 +158,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // in index.html
 });
 
+function safeRemoveElement(el) {
+  try {
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+  } catch (_) {
+    // Ignore removal errors
+  }
+}
+
 function initializeApp() {
   try {
     // Check for required elements
@@ -183,15 +189,10 @@ function initializeApp() {
     focusInput();
     updateConnectionStatus();
     
-    // Load saved language preference
+    // Load saved language preference and fully apply it (button text, aria labels, etc.)
     const savedLang = localStorage.getItem('language') || 'en';
-    if (savedLang !== currentLanguage) {
-      currentLanguage = savedLang;
-      updateLanguage();
-    } else {
-      // Initialize aria-labels even if language hasn't changed
-      updateAriaLabels();
-    }
+    currentLanguage = savedLang === 'de' ? 'de' : 'en';
+    updateLanguage();
     
     // Initialize copy display
     updateCopyDisplay();
@@ -220,8 +221,6 @@ function setupEventListeners() {
             generateQRPreview(sscc).catch(error => {
               showError('Error processing SSCC: ' + error.message);
             });
-            checkDuplicate(sscc);
-            clearError();
           } catch (error) {
             showError('Error processing SSCC: ' + error.message);
           }
@@ -274,7 +273,7 @@ function setupEventListeners() {
   
   // Auto-focus on input when clicking anywhere
   document.addEventListener('click', function(e) {
-    if (!e.target.closest('.copy-btn, .lang-btn, .change-printer-btn, .printer-select')) {
+    if (!e.target.closest('.copy-btn, .lang-btn, .printer-settings-btn, .print-btn, .clear-btn, .clear-total-btn, .change-printer-btn, .printer-select')) {
       focusInput();
     }
   });
@@ -282,77 +281,69 @@ function setupEventListeners() {
 
 async function generateQRPreview(sscc) {
     // Prevent multiple simultaneous generations
-    if (isGeneratingPreview) {
-        return;
-    }
-    
+    if (isGeneratingPreview) return;
+
     isGeneratingPreview = true;
-    
-    const previewContainer = document.getElementById('stickerPreview');
-    if (!previewContainer) {
-        isGeneratingPreview = false;
-        return;
-    }
-    
-    // Clear previous content
-    previewContainer.innerHTML = '';
-    clearError();
-    clearDuplicateWarning();
-
-    if (!sscc) {
-        clearPreview();
-        isGeneratingPreview = false;
-        return;
-    }
-
-    // Show density warning for long SSCCs
-    if (sscc.length > QR_DENSITY_WARNING_THRESHOLD) {
-        showError(translations[currentLanguage]['long-sscc-warning']);
-    }
-
-    checkDuplicate(sscc);
-
-    const stickerContent = document.createElement('div');
-    stickerContent.className = 'sticker-content';
-
-    const qrContainer = document.createElement('div');
-    qrContainer.className = 'qr-code-container';
-    
     try {
-        const canvas = await generateQRCode(sscc, 120);
-        if (canvas) {
-            qrContainer.appendChild(canvas);
-        } else {
-            showError(translations[currentLanguage]['qr-generation-error']);
-            isGeneratingPreview = false;
+        const previewContainer = document.getElementById('stickerPreview');
+        if (!previewContainer) return;
+
+        // Clear previous content
+        previewContainer.innerHTML = '';
+        clearError();
+        clearDuplicateWarning();
+
+        if (!sscc) {
+            clearPreview();
             return;
         }
-    } catch (error) {
-        showError(translations[currentLanguage]['qr-generation-error']);
+
+        // Show density warning for long SSCCs
+        if (sscc.length > QR_DENSITY_WARNING_THRESHOLD) {
+            showError(translations[currentLanguage]['long-sscc-warning']);
+        }
+
+        checkDuplicate(sscc);
+
+        const stickerContent = document.createElement('div');
+        stickerContent.className = 'sticker-content';
+
+        const qrContainer = document.createElement('div');
+        qrContainer.className = 'qr-code-container';
+        
+        try {
+            const canvas = await generateQRCode(sscc, 120);
+            if (canvas) {
+                qrContainer.appendChild(canvas);
+            } else {
+                showError(translations[currentLanguage]['qr-generation-error']);
+                return;
+            }
+        } catch (_) {
+            showError(translations[currentLanguage]['qr-generation-error']);
+            return;
+        }
+
+        const stickerInfo = document.createElement('div');
+        stickerInfo.className = 'sticker-info';
+
+        const lastFive = document.createElement('div');
+        lastFive.className = 'last-five';
+        lastFive.textContent = sscc.slice(-5);
+
+        const uniqueSymbol = document.createElement('div');
+        uniqueSymbol.className = 'unique-symbol';
+        uniqueSymbol.textContent = generateUniqueSymbol(sscc);
+
+        stickerInfo.appendChild(lastFive);
+        stickerInfo.appendChild(uniqueSymbol);
+
+        stickerContent.appendChild(qrContainer);
+        stickerContent.appendChild(stickerInfo);
+        previewContainer.appendChild(stickerContent);
+    } finally {
         isGeneratingPreview = false;
-        return;
     }
-
-    const stickerInfo = document.createElement('div');
-    stickerInfo.className = 'sticker-info';
-
-    const lastFive = document.createElement('div');
-    lastFive.className = 'last-five';
-    lastFive.textContent = sscc.slice(-5);
-
-    const uniqueSymbol = document.createElement('div');
-    uniqueSymbol.className = 'unique-symbol';
-    uniqueSymbol.textContent = generateUniqueSymbol(sscc);
-
-    stickerInfo.appendChild(lastFive);
-    stickerInfo.appendChild(uniqueSymbol);
-
-    stickerContent.appendChild(qrContainer);
-    stickerContent.appendChild(stickerInfo);
-    previewContainer.appendChild(stickerContent);
-    
-    // Reset the flag after successful generation
-    isGeneratingPreview = false;
 }
 
 // Generate Unique Symbol (deterministic based on SSCC)
@@ -531,17 +522,23 @@ function showError(message) {
 
 function clearError() {
   const errorDiv = document.getElementById('errorMessage');
-  if (errorDiv) errorDiv.textContent = '';
+  if (errorDiv) {
+    errorDiv.textContent = '';
+    errorDiv.style.display = 'none';
+  }
 }
 
 function showDuplicateWarning() {
   const warningDiv = document.getElementById('duplicateWarning');
+  if (!warningDiv) return;
   warningDiv.textContent = translations[currentLanguage]['duplicate-warning'];
   warningDiv.style.display = 'block';
 }
 
 function clearDuplicateWarning() {
   const warningDiv = document.getElementById('duplicateWarning');
+  if (!warningDiv) return;
+  warningDiv.textContent = '';
   warningDiv.style.display = 'none';
 }
 
@@ -569,9 +566,7 @@ function showSuccessMessage() {
   setTimeout(() => {
     notification.style.opacity = '0';
     setTimeout(() => {
-      if (document.body.contains(notification)) {
-        document.body.removeChild(notification);
-      }
+      safeRemoveElement(notification);
     }, 300);
   }, 2500);
 }
@@ -589,6 +584,7 @@ function clearAllFields() {
   clearPreview();
   clearError();
   clearDuplicateWarning();
+  clearCopyTotal();
 }
 
 function focusInput() {
@@ -599,16 +595,19 @@ function focusInput() {
 }
 
 function showLoading() {
-  document.getElementById('loadingOverlay').classList.add('show');
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.classList.add('show');
 }
 
 function hideLoading() {
-  document.getElementById('loadingOverlay').classList.remove('show');
+  const overlay = document.getElementById('loadingOverlay');
+  if (overlay) overlay.classList.remove('show');
 }
 
 // Status Functions
 function updatePrintStatus(status) {
   const statusElement = document.getElementById('printStatus');
+  if (!statusElement) return;
   statusElement.className = `status-${status}`;
   statusElement.textContent = translations[currentLanguage][status] || status;
 }
@@ -803,6 +802,7 @@ function generateQRCode(text, size = 120) {
                 try {
                     // Get the generated canvas
                     const canvas = tempDiv.querySelector('canvas');
+                    const img = tempDiv.querySelector('img');
                     if (canvas) {
                         // Create a new canvas with the same content
                         const newCanvas = document.createElement('canvas');
@@ -819,6 +819,18 @@ function generateQRCode(text, size = 120) {
                         ctx.strokeRect(0, 0, size, size);
                         
                         // Clean up
+                        document.body.removeChild(tempDiv);
+                        resolve(newCanvas);
+                    } else if (img && img.complete) {
+                        // Some builds of qrcode.js render an <img> instead of a <canvas>
+                        const newCanvas = document.createElement('canvas');
+                        newCanvas.width = size;
+                        newCanvas.height = size;
+                        const ctx = newCanvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, size, size);
+                        ctx.strokeStyle = '#000000';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(0, 0, size, size);
                         document.body.removeChild(tempDiv);
                         resolve(newCanvas);
                     } else {
@@ -845,7 +857,9 @@ function clearInput() {
     const ssccInput = document.getElementById('ssccInput');
     if (ssccInput) {
         ssccInput.value = '';
-        generateQRPreview('');
+        clearTimeout(previewDebounceTimer);
+        isGeneratingPreview = false;
+        clearPreview();
         clearError();
         clearDuplicateWarning();
         focusInput();
@@ -883,7 +897,7 @@ function addToCopies(amount) {
     setTimeout(() => notification.style.opacity = '1', 10);
     setTimeout(() => {
         notification.style.opacity = '0';
-        setTimeout(() => document.body.removeChild(notification), 300);
+        setTimeout(() => safeRemoveElement(notification), 300);
     }, 2000);
 }
 
@@ -990,8 +1004,8 @@ async function attemptSilentPrint(sscc, quantity) {
             `;
             
             // Set iframe attributes for better compatibility with thermal printers
-            iframe.setAttribute('sandbox', 'allow-modals allow-scripts allow-same-origin');
             iframe.setAttribute('aria-hidden', 'true');
+            iframe.setAttribute('title', 'print-frame');
             
             document.body.appendChild(iframe);
             
@@ -1013,14 +1027,12 @@ async function attemptSilentPrint(sscc, quantity) {
                 const iframeWindow = iframe.contentWindow;
                 
                 // Set up print event handlers for better detection
-                let printCompleted = false;
-                
                 iframeWindow.addEventListener('beforeprint', () => {
                     // Print is starting
                 });
                 
                 iframeWindow.addEventListener('afterprint', () => {
-                    printCompleted = true;
+                    // Print dialog closed (best-effort signal)
                 });
                 
                 // Focus and print with thermal printer delay

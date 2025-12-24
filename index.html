@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#667eea">
     <title>SSCC QR Code Generator</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
@@ -11,40 +12,63 @@
     <!-- Use local QR code library -->
     <script src="qrcode.min.js"></script>
     <script>
-        // Check if QR code library loaded successfully
-        window.addEventListener('load', function() {
-            if (typeof QRCode === 'undefined') {
-                document.body.innerHTML = '<div style="color:red;font-size:1.5em;text-align:center;margin-top:2em;">QR Code library failed to load. Please refresh the page.</div>';
-            } else {
-                // Library loaded successfully, initialize app
-                initializeApp();
-            }
-        });
-        
-        // Register service worker for offline support
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then(function(registration) {
-                        // Service Worker registered successfully
-                    }, function(error) {
-                        // Service Worker registration failed silently
-                    });
-            });
+        function showBootError(message) {
+            document.body.innerHTML = `
+                <div style="max-width:700px;margin:2em auto;padding:1.25em;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;">
+                    <div style="color:#b00020;font-size:1.25em;font-weight:700;margin-bottom:0.75em;">${message}</div>
+                    <div style="color:#333;margin-bottom:1em;">
+                        If you’re running this behind a service worker cache, try a hard refresh (Ctrl+Shift+R) or open in an incognito window.
+                    </div>
+                    <button onclick="window.location.reload()" style="padding:0.75em 1em;border-radius:8px;border:0;background:#3498db;color:#fff;font-weight:600;cursor:pointer;">
+                        Reload
+                    </button>
+                </div>
+            `;
         }
-        
-        // Check if QRCode is available after script load
-        window.addEventListener('load', function() {
-            // Clear service worker cache if QRCode is not available
-            if (typeof QRCode === 'undefined' && 'serviceWorker' in navigator) {
-                caches.keys().then(function(cacheNames) {
-                    return Promise.all(
-                        cacheNames.map(function(cacheName) {
-                            return caches.delete(cacheName);
-                        })
-                    );
-                }).then(function() {
+
+        async function recoverFromBadCacheOnce() {
+            const key = 'qr_cache_recovered_once';
+            if (sessionStorage.getItem(key) === '1') return false;
+            sessionStorage.setItem(key, '1');
+
+            try {
+                if ('serviceWorker' in navigator) {
+                    const regs = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(regs.map(r => r.unregister()));
+                }
+                if ('caches' in window) {
+                    const names = await caches.keys();
+                    await Promise.all(names.map(n => caches.delete(n)));
+                }
+            } catch (_) {
+                // Best-effort recovery only
+            }
+            return true;
+        }
+
+        window.addEventListener('load', async function() {
+            // If QR library failed to load, try a single cache/service-worker recovery to avoid reload loops.
+            if (typeof QRCode === 'undefined') {
+                const recovered = await recoverFromBadCacheOnce();
+                if (recovered) {
                     window.location.reload();
+                    return;
+                }
+                showBootError('QR Code library failed to load.');
+                return;
+            }
+
+            // Library loaded successfully, initialize app (script.js defines initializeApp()).
+            try {
+                initializeApp();
+            } catch (e) {
+                showBootError('App failed to initialize.');
+            }
+
+            // Register service worker for offline support (after successful boot).
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./service-worker.js').catch(() => {
+                    // Registration can fail on file:// or non-secure contexts; ignore.
                 });
             }
         });
@@ -72,6 +96,11 @@
                         class="sscc-input" 
                         placeholder="Scan SSCC number here..." 
                         data-lang-placeholder="sscc-placeholder"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        autocapitalize="off"
+                        spellcheck="false"
+                        enterkeyhint="done"
                         autofocus
                         aria-label="SSCC input field"
                     >
