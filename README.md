@@ -7,13 +7,12 @@ A high-performance web application for generating QR code stickers from SSCC (Se
 ### Core Functionality
 - **SSCC Input**: Auto-focused input field optimized for handheld scanners
 - **QR Code Generation**: Instant QR code creation with real-time preview
-- **One-Click Printing**: 1, 5, 10, or 20 copies with automatic print jobs
-- **Sticker Design**: 5.5cm x 3.1cm landscape format with QR code, last 5 digits, and unique symbol
+- **Copy Accumulation + Print**: Add +1/+5/+10/+20 and print the total when ready
+- **Sticker Design**: 50mm x 30mm landscape format with QR code, last 5 digits, and unique symbol
 
 ### Smart Features
 - **Duplicate Detection**: Warns when SSCC was already printed today
-- **Auto-Clear**: 5-second delay after printing for next job
-- **Printer Memory**: Remembers selected printer per device
+- **Auto-Clear**: Clears input and copy total after a successful print
 - **Language Toggle**: Instant EN/DE switching
 - **Unique Symbols**: Visual identification symbols generated per SSCC
 
@@ -30,15 +29,14 @@ A high-performance web application for generating QR code stickers from SSCC (Se
 ## 🚀 Quick Start
 
 ### For Local Testing
-1. Download all files (`index.html`, `styles.css`, `script.js`)
-2. Open `index.html` in a modern web browser
-3. Select a printer when prompted
-4. Start scanning SSCC numbers!
+1. Download all files in this repo
+2. Open `index.html` in a modern web browser (best results from `http://` or `https://`)
+3. Start scanning SSCC numbers!
 
 ### For Production Deployment
 1. Upload files to your web server (e.g., `midiqr.aiconsy.com`)
 2. Ensure HTTPS is enabled for printer access
-3. Configure printer settings on each device
+3. Configure your browser print settings for your label printer
 4. Ready for warehouse operations!
 
 ## 📱 How to Use
@@ -52,8 +50,8 @@ A high-performance web application for generating QR code stickers from SSCC (Se
 
 ### First-Time Setup
 1. **Language**: Click 🌍 button to switch between EN/DE
-2. **Printer**: Select printer from dropdown (remembers choice)
-3. **Test Print**: Try with sample SSCC number
+2. **Print Setup**: Use the ⚙️ Settings button to open a test print and configure your printer settings
+3. **Test Print**: Try with a sample SSCC number
 
 ### Advanced Usage
 - **Multiple Users**: Each device remembers its own printer preference
@@ -70,7 +68,7 @@ A high-performance web application for generating QR code stickers from SSCC (Se
 - Printer access (HTTPS recommended)
 
 ### Dependencies
-- QRCode.js (loaded via CDN)
+- QRCode.js (loaded locally via `qrcode.min.js`)
 - No other external libraries required
 
 ### Supported Characters
@@ -79,21 +77,12 @@ A high-performance web application for generating QR code stickers from SSCC (Se
 - Unicode symbols for visual identification
 
 ### Print Specifications
-- **Sticker Size**: 5.5cm x 3.1cm (landscape)
+- **Sticker Size**: 50mm x 30mm (landscape)
 - **QR Code**: High-density, optimized for scanning
 - **Text**: Last 5 digits in large, bold font
 - **Symbol**: Unique visual identifier per SSCC
 
 ## 🔧 Customization
-
-### Adding More Printers
-Edit the `simulatedPrinters` array in `script.js`:
-```javascript
-const simulatedPrinters = [
-  'Your Printer Name Here',
-  'Another Printer Model'
-];
-```
 
 ### Changing Languages
 Add new language to `translations` object in `script.js`:
@@ -117,6 +106,6 @@ For support or customization requests, visit our website.
 ## 🔒 Privacy & Security
 
 - All data stored locally in browser
-- No external API calls (except QR library CDN)
+- No external API calls
 - SSCC numbers never transmitted to external servers
 - Daily automatic cleanup of duplicate tracking 
