@@ -11,40 +11,33 @@
     <!-- Use local QR code library -->
     <script src="qrcode.min.js"></script>
     <script>
-        // Check if QR code library loaded successfully
         window.addEventListener('load', function() {
+            // Check if QR code library loaded successfully
             if (typeof QRCode === 'undefined') {
-                document.body.innerHTML = '<div style="color:red;font-size:1.5em;text-align:center;margin-top:2em;">QR Code library failed to load. Please refresh the page.</div>';
-            } else {
-                // Library loaded successfully, initialize app
-                initializeApp();
-            }
-        });
-        
-        // Register service worker for offline support
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('./service-worker.js')
-                    .then(function(registration) {
-                        // Service Worker registered successfully
-                    }, function(error) {
-                        // Service Worker registration failed silently
+                // Clear service worker cache and reload if QRCode failed to load
+                if ('serviceWorker' in navigator) {
+                    caches.keys().then(function(cacheNames) {
+                        return Promise.all(
+                            cacheNames.map(function(cacheName) {
+                                return caches.delete(cacheName);
+                            })
+                        );
+                    }).then(function() {
+                        window.location.reload();
                     });
-            });
-        }
-        
-        // Check if QRCode is available after script load
-        window.addEventListener('load', function() {
-            // Clear service worker cache if QRCode is not available
-            if (typeof QRCode === 'undefined' && 'serviceWorker' in navigator) {
-                caches.keys().then(function(cacheNames) {
-                    return Promise.all(
-                        cacheNames.map(function(cacheName) {
-                            return caches.delete(cacheName);
-                        })
-                    );
-                }).then(function() {
-                    window.location.reload();
+                } else {
+                    document.body.innerHTML = '<div style="color:red;font-size:1.5em;text-align:center;margin-top:2em;">QR Code library failed to load. Please refresh the page.</div>';
+                }
+                return;
+            }
+
+            // Library loaded successfully, initialize app
+            initializeApp();
+
+            // Register service worker for offline support
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./service-worker.js').catch(function() {
+                    // Service Worker registration failed silently
                 });
             }
         });
@@ -56,7 +49,7 @@
         <header class="header">
             <h1 data-lang="title">SSCC QR Code Generator</h1>
             <div class="language-toggle">
-                <button id="langBtn" class="lang-btn" onclick="toggleLanguage()" aria-label="Toggle language">🌍 DE</button>
+                <button id="langBtn" class="lang-btn" onclick="toggleLanguage()" aria-label="Toggle language">🌍 EN</button>
             </div>
         </header>
 

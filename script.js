@@ -53,7 +53,6 @@ const translations = {
     'copies-added': 'Added {count} copies',
     'max-copies-error': 'Maximum 100 copies allowed. Current total: {current}',
     'select-copies-error': 'Please select number of copies first',
-    'print-success': 'Print job sent successfully!',
     'thermal-printer-optimized': 'Optimized for Zebra thermal printer',
     'clear': 'Clear',
     'settings': 'Settings',
@@ -120,7 +119,6 @@ const translations = {
     'copies-added': '{count} Kopien hinzugefügt',
     'max-copies-error': 'Maximum 100 Kopien erlaubt. Aktuell: {current}',
     'select-copies-error': 'Bitte wählen Sie zuerst die Anzahl der Kopien',
-    'print-success': 'Druckauftrag erfolgreich gesendet!',
     'thermal-printer-optimized': 'Optimiert für Zebra Thermodrucker',
     'clear': 'Löschen',
     'settings': 'Einstellungen',
@@ -153,12 +151,6 @@ const translations = {
 
 // Remove duplicate symbols
 const uniqueSymbols = ['🔹', '🔸', '🔺', '🔻', '⭐', '🌟', '💎', '🔮', '🎯', '🎪', '🎨', '🎭', '🔥', '⚡', '🌈', '🎃', '🎄', '🎁'];
-
-// Initialize App
-document.addEventListener('DOMContentLoaded', function() {
-  // The actual initialization will be triggered by the library load event
-  // in index.html
-});
 
 function initializeApp() {
   try {
@@ -216,15 +208,11 @@ function setupEventListeners() {
       // Debounce the preview generation to prevent multiple rapid generations
       previewDebounceTimer = setTimeout(() => {
         if (!isGeneratingPreview) {
-          try {
-            generateQRPreview(sscc).catch(error => {
+          generateQRPreview(sscc)
+            .then(() => checkDuplicate(sscc))
+            .catch(error => {
               showError('Error processing SSCC: ' + error.message);
             });
-            checkDuplicate(sscc);
-            clearError();
-          } catch (error) {
-            showError('Error processing SSCC: ' + error.message);
-          }
         }
       }, 300); // 300ms debounce delay
     } else {
@@ -310,8 +298,6 @@ async function generateQRPreview(sscc) {
         showError(translations[currentLanguage]['long-sscc-warning']);
     }
 
-    checkDuplicate(sscc);
-
     const stickerContent = document.createElement('div');
     stickerContent.className = 'sticker-content';
 
@@ -369,8 +355,6 @@ function generateUniqueSymbol(sscc) {
   const index = Math.abs(hash) % uniqueSymbols.length;
   return uniqueSymbols[index];
 }
-
-// Legacy print function - removed in favor of copy accumulation system
 
 // Generate Print Content
 async function generatePrintContent(sscc, quantity) {
@@ -506,8 +490,6 @@ async function generatePrintContent(sscc, quantity) {
     </html>
   `;
 }
-
-// Old sendToPrinter function removed - replaced with silent printing
 
 // Check for Duplicate SSCC
 function checkDuplicate(sscc) {
@@ -836,10 +818,6 @@ function generateQRCode(text, size = 120) {
     });
 }
 
-// Remove duplicate event listener - this is handled in setupEventListeners()
-
-
-
 // --- Clear Input Functionality ---
 function clearInput() {
     const ssccInput = document.getElementById('ssccInput');
@@ -859,8 +837,9 @@ function addToCopies(amount) {
         showError(translations[currentLanguage]['max-copies-error'].replace('{current}', accumulatedCopies));
         return;
     }
-    
+
     accumulatedCopies += amount;
+    lastPrintQuantity = amount; // Track last quantity for spacebar shortcut
     updateCopyDisplay();
     
     // Show brief feedback
@@ -883,7 +862,11 @@ function addToCopies(amount) {
     setTimeout(() => notification.style.opacity = '1', 10);
     setTimeout(() => {
         notification.style.opacity = '0';
-        setTimeout(() => document.body.removeChild(notification), 300);
+        setTimeout(() => {
+            if (document.body.contains(notification)) {
+                document.body.removeChild(notification);
+            }
+        }, 300);
     }, 2000);
 }
 
@@ -1219,6 +1202,4 @@ function openPrinterSettings() {
         // Fallback to current window print dialog
         window.print();
     }
-}
-
-// Old showPrinterSettingsDialog function removed - replaced with direct print dialog access 
+} 
