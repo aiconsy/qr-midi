@@ -10,12 +10,6 @@ const ASSETS_TO_CACHE = [
   './manifest.json'
 ];
 
-// List of external resources that should be allowed to pass through
-const EXTERNAL_RESOURCES = [
-  'https://www.google-analytics.com/analytics.js',
-  'https://www.googletagmanager.com/gtag/js'
-];
-
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -44,9 +38,8 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests and external resources
-  if (!event.request.url.startsWith(self.location.origin) || 
-      EXTERNAL_RESOURCES.some(url => event.request.url.startsWith(url))) {
+  // Skip cross-origin requests
+  if (!event.request.url.startsWith(self.location.origin)) {
     return;
   }
 

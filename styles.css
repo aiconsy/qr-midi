@@ -113,13 +113,6 @@ body {
     gap: 5px;
 }
 
-/* Instructions text styling */
-.instructions-text {
-    font-size: 0.9em;
-    color: #555;
-    margin-top: 4px;
-}
-
 /* Instructions Section */
 .instructions-section {
     background: rgba(52, 152, 219, 0.05);
@@ -455,56 +448,6 @@ body {
     margin-top: 4px;
 }
 
-/* Printer Section */
-.printer-section {
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap;
-}
-
-.printer-section label {
-    font-weight: 600;
-    color: #2c3e50;
-    font-size: 16px;
-    min-width: 60px;
-}
-
-.printer-select {
-    flex: 1;
-    padding: 12px 15px;
-    border: 2px solid #ddd;
-    border-radius: 8px;
-    font-size: 16px;
-    background: #f8f9fa;
-    min-width: 200px;
-}
-
-.printer-select:focus {
-    outline: none;
-    border-color: #3498db;
-    background: white;
-}
-
-.change-printer-btn {
-    background: #9b59b6;
-    color: white;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    white-space: nowrap;
-}
-
-.change-printer-btn:hover {
-    background: #8e44ad;
-    transform: translateY(-2px);
-}
-
 /* Status Bar */
 .status-bar {
     background: rgba(255, 255, 255, 0.9);
@@ -690,16 +633,7 @@ body {
     .unique-symbol {
         font-size: 28px;
     }
-    
-    .printer-section {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .printer-select {
-        min-width: auto;
-    }
-    
+
     .status-bar {
         flex-direction: column;
         gap: 15px;
@@ -707,6 +641,22 @@ body {
     
     .status-item {
         justify-content: center;
+    }
+
+    .instructions-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .instructions-section {
+        padding: 15px;
+        margin: 15px 0;
+    }
+
+    .hotkey-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
     }
 }
 
@@ -828,23 +778,4 @@ button:focus, input:focus, select:focus {
 
 .copy-btn:focus, .lang-btn:focus, .clear-btn:focus {
     background: #ddd;
-} 
-
-/* Responsive design for instructions */
-@media (max-width: 768px) {
-    .instructions-grid {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-    
-    .instructions-section {
-        padding: 15px;
-        margin: 15px 0;
-    }
-    
-    .hotkey-item {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 4px;
-    }
 } 
